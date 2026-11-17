@@ -1,5 +1,5 @@
 from typing import Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ReviewCreate(BaseModel):
@@ -13,6 +13,8 @@ class ReviewUpdate(BaseModel):
 
 
 class ReviewOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     user_id: int
     movie_id: int

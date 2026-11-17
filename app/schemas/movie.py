@@ -1,5 +1,5 @@
 from typing import Literal, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class MovieCreate(BaseModel):
@@ -23,6 +23,8 @@ class MovieUpdate(BaseModel):
 
 
 class MovieOut(MovieCreate):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     rating: float
     reviews_count: int
