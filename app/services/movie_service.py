@@ -84,6 +84,7 @@ def recalculate_rating(db, movie_id):
     movie.reviews_count = count
     if count == 0:
         movie.rating = 0.0
+        movie.section = "mainstream"
         return
     average = float(average)
     movie.rating = round(average, 1)
