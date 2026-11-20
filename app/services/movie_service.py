@@ -57,7 +57,6 @@ def update_movie(db, movie_id, data):
 
 def delete_movie(db, movie_id):
     movie = get_movie(db, movie_id)
-    # reviews and watchlist items are removed by ON DELETE CASCADE
     db.delete(movie)
     db.commit()
 
@@ -76,7 +75,6 @@ def get_random_movie(db, user_id, genre):
 
 
 def recalculate_rating(db, movie_id):
-    """Updates rating, reviews_count and section. The caller commits."""
     average, count = db.execute(
         select(func.avg(Review.rating), func.count(Review.id)).where(Review.movie_id == movie_id)
     ).one()

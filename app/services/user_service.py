@@ -38,7 +38,6 @@ def update_user(db, user_id, data):
 def delete_user(db, user_id):
     user = get_user(db, user_id)
     affected_movies = db.scalars(select(Review.movie_id).where(Review.user_id == user_id).distinct()).all()
-    # reviews, watchlist items and tokens are removed by ON DELETE CASCADE
     db.delete(user)
     db.flush()
     for movie_id in affected_movies:
