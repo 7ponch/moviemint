@@ -11,6 +11,8 @@ class RegisterRequest(BaseModel):
     def password_has_digit(cls, value):
         if not any(ch.isdigit() for ch in value):
             raise ValueError("Password must contain at least one digit")
+        if len(value.encode()) > 72:
+            raise ValueError("Password must be at most 72 bytes")
         return value
 
 

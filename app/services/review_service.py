@@ -2,6 +2,7 @@ from fastapi import HTTPException
 from sqlalchemy import select
 
 from app.models import Review
+from app.models.user import ROLE_ADMIN
 from app.services import movie_service, watchlist_service
 from app.services.common import commit_or_409
 
@@ -46,9 +47,9 @@ def update_review(db, review_id, user_id, data):
     return review
 
 
-def delete_review(db, review_id, user_id):
+def delete_review(db, review_id, user):
     review = _get_review(db, review_id)
-    if review.user_id != user_id:
+    if review.user_id != user.id and user.role != ROLE_ADMIN:
         raise HTTPException(status_code=403, detail="You can only delete your own review")
     movie_id = review.movie_id
     db.delete(review)

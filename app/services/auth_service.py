@@ -1,31 +1,9 @@
-import hashlib
-import hmac
-import os
-import secrets
-
 from fastapi import HTTPException
 from sqlalchemy import func, select
 
-from app.models import AuthToken, User
+from app.models import User
+from app.security import create_access_token, hash_password, verify_dummy_password, verify_password
 from app.services.common import commit_or_409
-
-ITERATIONS = 100_000
-
-
-def hash_password(password):
-    salt = os.urandom(16)
-    digest = hashlib.pbkdf2_hmac("sha256", password.encode(), salt, ITERATIONS)
-    return salt.hex() + ":" + digest.hex()
-
-
-def verify_password(password, stored):
-    salt_hex, digest_hex = stored.split(":")
-    digest = hashlib.pbkdf2_hmac("sha256", password.encode(), bytes.fromhex(salt_hex), ITERATIONS)
-    return hmac.compare_digest(digest.hex(), digest_hex)
-
-
-def hash_token(token):
-    return hashlib.sha256(token.encode()).hexdigest()
 
 
 def register(db, data):
@@ -41,9 +19,12 @@ def register(db, data):
 
 def login(db, data):
     user = db.scalar(select(User).where(func.lower(User.username) == data.username.lower()))
-    if user is not None and verify_password(data.password, user.password_hash):
-        token = secrets.token_hex(32)
-        db.add(AuthToken(token_hash=hash_token(token), user_id=user.id))
-        db.commit()
-        return {"access_token": token, "token_type": "bearer"}
-    raise HTTPException(status_code=401, detail="Invalid username or password")
+    if user is None:
+        verify_dummy_password(data.password)
+    elif verify_password(data.password, user.password_hash):
+        return {"access_token": create_access_token(user), "token_type": "bearer"}
+    raise HTTPException(
+        status_code=401,
+        detail="Invalid username or password",
+        headers={"WWW-Authenticate": "Bearer"},
+    )

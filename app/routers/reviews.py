@@ -24,4 +24,4 @@ def update_review(review_id: int, data: ReviewUpdate, current_user=Depends(get_c
 
 @router.delete("/reviews/{review_id}", status_code=204)
 def delete_review(review_id: int, current_user=Depends(get_current_user), db=Depends(get_db)):
-    review_service.delete_review(db, review_id, current_user.id)
+    review_service.delete_review(db, review_id, current_user)

@@ -1,26 +1,36 @@
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from sqlalchemy import select
 
 from app.database import get_db
-from app.models import AuthToken, User
-from app.services.auth_service import hash_token
+from app.models import User
+from app.security import TokenError, TokenExpired, decode_access_token
 
-bearer_schema = HTTPBearer(auto_error=False)
+bearer_scheme = HTTPBearer(auto_error=False)
+
+
+def _unauthorized(detail):
+    return HTTPException(status_code=401, detail=detail, headers={"WWW-Authenticate": "Bearer"})
 
 
 def get_current_user(
-    credentials: HTTPAuthorizationCredentials = Depends(bearer_schema),
+    credentials: HTTPAuthorizationCredentials = Depends(bearer_scheme),
     db=Depends(get_db),
 ):
     if credentials is None:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-    stmt = (
-        select(User)
-        .join(AuthToken, AuthToken.user_id == User.id)
-        .where(AuthToken.token_hash == hash_token(credentials.credentials))
-    )
-    user = db.scalar(stmt)
+        raise _unauthorized("Not authenticated")
+    try:
+        user_id = decode_access_token(credentials.credentials)
+    except TokenExpired:
+        raise _unauthorized("Token expired")
+    except TokenError:
+        raise _unauthorized("Invalid token")
+    user = db.get(User, user_id)
     if user is None:
-        raise HTTPException(status_code=401, detail="Invalid token")
+        raise _unauthorized("Invalid token")
     return user
+
+
+def require_admin(current_user=Depends(get_current_user)):
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return current_user

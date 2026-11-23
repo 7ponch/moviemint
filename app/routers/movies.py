@@ -1,7 +1,7 @@
 from typing import Literal, Optional
 from fastapi import APIRouter, Depends
 from app.database import get_db
-from app.dependencies import get_current_user
+from app.dependencies import get_current_user, require_admin
 from app.schemas.movie import MovieCreate, MovieUpdate, MovieOut
 from app.services import movie_service
 
@@ -28,16 +28,16 @@ def get_movie(movie_id: int, db=Depends(get_db)):
     return movie_service.get_movie(db, movie_id)
 
 
-@router.post("", response_model=MovieOut, status_code=201, dependencies=[Depends(get_current_user)])
+@router.post("", response_model=MovieOut, status_code=201, dependencies=[Depends(require_admin)])
 def create_movie(data: MovieCreate, db=Depends(get_db)):
     return movie_service.create_movie(db, data)
 
 
-@router.patch("/{movie_id}", response_model=MovieOut, dependencies=[Depends(get_current_user)])
+@router.patch("/{movie_id}", response_model=MovieOut, dependencies=[Depends(require_admin)])
 def update_movie(movie_id: int, data: MovieUpdate, db=Depends(get_db)):
     return movie_service.update_movie(db, movie_id, data)
 
 
-@router.delete("/{movie_id}", status_code=204, dependencies=[Depends(get_current_user)])
+@router.delete("/{movie_id}", status_code=204, dependencies=[Depends(require_admin)])
 def delete_movie(movie_id: int, db=Depends(get_db)):
     movie_service.delete_movie(db, movie_id)
